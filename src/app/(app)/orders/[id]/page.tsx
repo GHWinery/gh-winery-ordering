@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
-import { OrderDetailClient } from "./OrderDetailClient";
+import { FulfillerStatusRow, OrderActions } from "./OrderDetailClient";
 import type { Order, OrderItem } from "@/lib/types";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 
@@ -132,7 +132,7 @@ export default async function OrderDetailPage({
             )}
 
             {/* Fulfiller status (inline) */}
-            <OrderDetailClient.FulfillerStatusRow
+            <FulfillerStatusRow
               itemId={item.id}
               currentStatus={item.fulfiller_status}
               currentNotes={item.fulfiller_notes}
@@ -163,7 +163,7 @@ export default async function OrderDetailPage({
       </div>
 
       {/* Actions */}
-      <OrderDetailClient.Actions order={typedOrder} />
+      <OrderActions order={typedOrder} />
     </div>
   );
 }

@@ -187,8 +187,4 @@ function Actions({
   );
 }
 
-/* Export as compound component */
-export const OrderDetailClient = {
-  FulfillerStatusRow,
-  Actions,
-};
+export { FulfillerStatusRow, Actions as OrderActions };

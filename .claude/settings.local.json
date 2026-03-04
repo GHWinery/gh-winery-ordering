@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install lucide-react framer-motion)",
+      "Bash(npx next build)",
+      "Bash(git add package.json package-lock.json src/app/globals.css src/app/layout.tsx src/app/page.tsx public/file.svg public/globe.svg public/next.svg public/vercel.svg public/window.svg src/app/\\\\\\(app\\\\\\)/ src/app/login/ src/components/ src/lib/ src/middleware.ts supabase/)",
+      "Bash(git commit:*)",
+      "Bash(git push origin master)",
+      "Bash(gh repo create gh-winery-ordering --private --source=. --push)",
+      "Bash(git remote add origin https://github.com/GHWinery/gh-winery-ordering.git)",
+      "Bash(git push -u origin master)",
+      "Bash(python -c \":*)",
+      "Bash(git add -A)"
+    ]
+  }
+}

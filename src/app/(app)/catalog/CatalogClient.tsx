@@ -101,6 +101,17 @@ export function CatalogClient({ stores }: { stores: Store[] }) {
             className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-wine"
           />
         </div>
+        <div className="col-span-2">
+          <label className="block text-xs font-medium text-brown/70 mb-1">
+            Order URL (optional)
+          </label>
+          <input
+            name="order_url"
+            type="url"
+            placeholder="https://..."
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-wine"
+          />
+        </div>
         <div>
           <label className="block text-xs font-medium text-brown/70 mb-1">
             Available At

@@ -7,9 +7,11 @@ export type Store = {
 export type SupplyCategory =
   | "Wine"
   | "Packaging"
-  | "TastingRoom"
+  | "GiftShop"
+  | "POS"
   | "Cleaning"
   | "Office"
+  | "Slushie"
   | "BarSupplies";
 
 export type SupplyItem = {
@@ -20,6 +22,7 @@ export type SupplyItem = {
   unit: string;
   available_at: string[];
   sort_order: number;
+  order_url: string | null;
 };
 
 export type OrderStatus =
@@ -28,6 +31,13 @@ export type OrderStatus =
   | "fulfilled"
   | "received"
   | "completed";
+
+export type FulfillerStatus =
+  | "to_be_ordered"
+  | "need_info"
+  | "ordered"
+  | "out_for_delivery"
+  | "unable_to_get";
 
 export type Order = {
   id: string;
@@ -55,24 +65,30 @@ export type OrderItem = {
   fulfilled_by_distribution: boolean;
   received_by_store: boolean;
   notes: string | null;
+  fulfiller_status: FulfillerStatus | null;
+  fulfiller_notes: string | null;
   supply_items?: SupplyItem;
 };
 
 export const CATEGORY_LABELS: Record<SupplyCategory, string> = {
   Wine: "Wine",
   Packaging: "Packaging",
-  TastingRoom: "Tasting Room",
+  GiftShop: "Gift Shop",
+  POS: "POS",
   Cleaning: "Cleaning",
   Office: "Office",
+  Slushie: "Slushie",
   BarSupplies: "Bar Supplies",
 };
 
 export const CATEGORY_ORDER: SupplyCategory[] = [
   "Wine",
   "Packaging",
-  "TastingRoom",
+  "GiftShop",
+  "POS",
   "Cleaning",
   "Office",
+  "Slushie",
   "BarSupplies",
 ];
 
@@ -90,4 +106,12 @@ export const STATUS_FLOW: Record<OrderStatus, OrderStatus | null> = {
   fulfilled: "received",
   received: "completed",
   completed: null,
+};
+
+export const FULFILLER_STATUS_LABELS: Record<FulfillerStatus, string> = {
+  to_be_ordered: "To Be Ordered",
+  need_info: "Need More Info",
+  ordered: "Ordered",
+  out_for_delivery: "Out for Delivery",
+  unable_to_get: "Unable to Get",
 };

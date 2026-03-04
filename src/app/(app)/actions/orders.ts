@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { OrderStatus } from "@/lib/types";
+import type { OrderStatus, FulfillerStatus } from "@/lib/types";
 
 type OrderItemInput = {
   supply_item_id: string;
@@ -167,6 +167,25 @@ export async function deleteOrder(orderId: string) {
   const { error } = await supabase.from("orders").delete().eq("id", orderId);
   if (error) return { error: error.message };
   revalidatePath("/");
+  revalidatePath("/orders");
+  return { success: true };
+}
+
+export async function updateOrderItemFulfillerStatus(
+  itemId: string,
+  status: FulfillerStatus | null,
+  notes: string | null
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("order_items")
+    .update({
+      fulfiller_status: status,
+      fulfiller_notes: notes,
+    })
+    .eq("id", itemId);
+
+  if (error) return { error: error.message };
   revalidatePath("/orders");
   return { success: true };
 }

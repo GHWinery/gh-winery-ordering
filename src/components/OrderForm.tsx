@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Wine,
   Package,
-  GlassWater,
+  Gift,
+  CreditCard,
   SprayCan,
   Briefcase,
+  CupSoda,
   Beer,
   Plus,
   Minus,
@@ -18,6 +20,7 @@ import {
   Save,
   ShoppingCart,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import {
   CATEGORY_ORDER,
@@ -26,15 +29,16 @@ import {
   type SupplyCategory,
 } from "@/lib/types";
 import { useToast } from "./Toast";
-import { DeadlineBanner, isLocked } from "./DeadlineBanner";
 
 /* ── Category icon mapping ── */
 const CATEGORY_ICONS: Record<SupplyCategory, React.ReactNode> = {
   Wine: <Wine className="w-4 h-4" />,
   Packaging: <Package className="w-4 h-4" />,
-  TastingRoom: <GlassWater className="w-4 h-4" />,
+  GiftShop: <Gift className="w-4 h-4" />,
+  POS: <CreditCard className="w-4 h-4" />,
   Cleaning: <SprayCan className="w-4 h-4" />,
   Office: <Briefcase className="w-4 h-4" />,
+  Slushie: <CupSoda className="w-4 h-4" />,
   BarSupplies: <Beer className="w-4 h-4" />,
 };
 
@@ -68,7 +72,6 @@ export function OrderForm({
   const [orderNotes, setOrderNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const [locked] = useState(isLocked);
 
   const [itemStates, setItemStates] = useState<Record<string, ItemState>>(
     () => {
@@ -176,11 +179,6 @@ export function OrderForm({
   }
 
   async function handleSubmit(asDraft: boolean) {
-    if (locked && !asDraft) {
-      toast("Ordering is locked for this week.", "error");
-      return;
-    }
-
     setSubmitting(true);
     const flaggedItems = Object.values(itemStates).filter(
       (i) => i.order_flag || i.quantity_ordered > 0
@@ -211,9 +209,6 @@ export function OrderForm({
 
   return (
     <div className="space-y-5 pb-28">
-      {/* Deadline Banner */}
-      <DeadlineBanner />
-
       {/* ── Category Tabs (horizontal scroll) ── */}
       <div
         ref={tabsRef}
@@ -286,13 +281,29 @@ export function OrderForm({
                   <div className="flex items-center gap-3">
                     {/* Item info */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-charcoal text-[15px] leading-tight">
-                        {item.name}
-                      </h4>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-semibold text-charcoal text-[15px] leading-tight">
+                          {item.name}
+                        </h4>
+                        {item.order_url && (
+                          <a
+                            href={item.order_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-info hover:text-info/80 transition-colors shrink-0"
+                            title="Open ordering link"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-cream-dark text-charcoal-light">
-                          Rec: {item.recommended_stock} {item.unit}
-                        </span>
+                        {item.recommended_stock > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-cream-dark text-charcoal-light">
+                            Rec: {item.recommended_stock} {item.unit}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -300,7 +311,7 @@ export function OrderForm({
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => decrement(item.id)}
-                        disabled={locked || state.quantity_ordered === 0}
+                        disabled={state.quantity_ordered === 0}
                         className="w-10 h-10 rounded-xl bg-cream-dark hover:bg-cream-dark/80
                           flex items-center justify-center transition-colors
                           disabled:opacity-30 disabled:cursor-not-allowed"
@@ -320,10 +331,8 @@ export function OrderForm({
 
                       <button
                         onClick={() => increment(item.id)}
-                        disabled={locked}
                         className="w-10 h-10 rounded-xl bg-wine text-white hover:bg-wine-light
-                          flex items-center justify-center transition-colors shadow-sm
-                          disabled:opacity-30 disabled:cursor-not-allowed"
+                          flex items-center justify-center transition-colors shadow-sm"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -365,10 +374,9 @@ export function OrderForm({
                           }
                           placeholder="Add a note for this item..."
                           rows={2}
-                          disabled={locked}
                           className="w-full border border-cream-dark rounded-xl px-3 py-2 text-sm
                             focus:outline-none focus:ring-2 focus:ring-wine/20 focus:border-wine/30
-                            bg-cream/50 resize-none transition-all disabled:opacity-50"
+                            bg-cream/50 resize-none transition-all"
                         />
                       </div>
                     </motion.div>
@@ -389,11 +397,10 @@ export function OrderForm({
           value={orderNotes}
           onChange={(e) => setOrderNotes(e.target.value)}
           rows={3}
-          disabled={locked}
           placeholder="Any special notes for this order..."
           className="w-full border border-cream-dark rounded-xl px-3 py-2 text-sm
             focus:outline-none focus:ring-2 focus:ring-wine/20 focus:border-wine/30
-            bg-cream/50 resize-none transition-all disabled:opacity-50"
+            bg-cream/50 resize-none transition-all"
         />
       </div>
 
@@ -429,7 +436,7 @@ export function OrderForm({
                 </button>
 
                 <button
-                  disabled={submitting || totalItems === 0 || locked}
+                  disabled={submitting || totalItems === 0}
                   onClick={() => handleSubmit(false)}
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold
                     bg-wine text-white rounded-xl hover:bg-wine-light

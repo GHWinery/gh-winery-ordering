@@ -14,6 +14,8 @@ export async function addSupplyItem(formData: FormData) {
   const available_at = formData.getAll("available_at") as string[];
   const sort_order = parseInt(formData.get("sort_order") as string) || 0;
 
+  const order_url = (formData.get("order_url") as string) || null;
+
   const { error } = await supabase.from("supply_items").insert({
     name,
     category,
@@ -21,6 +23,7 @@ export async function addSupplyItem(formData: FormData) {
     unit,
     available_at,
     sort_order,
+    order_url,
   });
 
   if (error) return { error: error.message };

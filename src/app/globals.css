@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Primary: Deep wine/burgundy */
+  --color-wine: #5C0632;
+  --color-wine-light: #7A1B4C;
+  --color-wine-dark: #3D0421;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Backgrounds: Crisp off-whites */
+  --color-cream: #F8F6F3;
+  --color-cream-dark: #EDE9E3;
+
+  /* Text: Charcoal tones */
+  --color-charcoal: #1E1E2A;
+  --color-charcoal-light: #4A4A5A;
+
+  /* Accent / Earthy tones */
+  --color-brown: #6B4F3A;
+  --color-success: #2D6A4F;
+  --color-success-light: #D8F3DC;
+  --color-warning: #E09F3E;
+  --color-warning-light: #FFF3CD;
+  --color-danger: #C1121F;
+  --color-danger-light: #FFE0E0;
+  --color-info: #457B9D;
+
+  /* Fonts */
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+  --font-mono: var(--font-inter);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  color: var(--color-charcoal);
+}
+
+/* Smooth scrolling for category tabs */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }

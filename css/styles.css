@@ -684,6 +684,10 @@ tr:hover {
     font-family: inherit;
 }
 
+.catalog-add-unit {
+    max-width: 140px;
+}
+
 .catalog-add-input:focus {
     outline: none;
     border-color: var(--color-primary);
@@ -1105,8 +1109,14 @@ tr:hover {
 @media (max-width: 768px) {
     .app-content { padding: 16px; }
 
-    /* Nav: horizontal scroll */
-    .app-nav { overflow-x: auto; padding: 0 12px; -webkit-overflow-scrolling: touch; }
+    /* Nav: horizontal scroll with fade hint */
+    .app-nav {
+        overflow-x: auto;
+        padding: 0 12px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+    }
+    .app-nav::-webkit-scrollbar { display: none; }
     .nav-btn { white-space: nowrap; padding: 12px 14px; font-size: 0.9rem; }
 
     /* Header */
@@ -1152,51 +1162,96 @@ tr:hover {
     .app-content { padding: 10px; }
 
     /* Header: stack vertically */
-    .app-header { flex-direction: column; gap: 8px; align-items: flex-start; padding: 12px 14px; }
+    .app-header { flex-direction: column; gap: 6px; align-items: stretch; padding: 10px 14px; }
+    .header-left { justify-content: space-between; }
     .header-right { width: 100%; justify-content: space-between; }
     .app-title { font-size: 1.1rem; }
 
-    /* Nav: smaller buttons */
+    /* Nav: compact scrollable tabs */
+    .app-nav { padding: 0 8px; gap: 0; }
     .nav-btn { padding: 10px 12px; font-size: 0.82rem; }
 
-    /* Dashboard: single column */
+    /* View headers */
+    .view-header h2 { font-size: 1.2rem; }
+
+    /* Dashboard */
     .dashboard-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
     .dash-card { padding: 12px; }
     .dash-card .card-value { font-size: 1.4rem; }
     .dash-card .card-label { font-size: 0.75rem; }
 
     /* Cards */
-    .card { padding: 14px; }
+    .card { padding: 12px; }
     .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
 
-    /* Buttons */
-    .btn { padding: 8px 14px; font-size: 0.85rem; }
-    .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+    /* Buttons — bigger touch targets */
+    .btn { padding: 10px 16px; font-size: 0.88rem; }
+    .btn-sm { padding: 8px 12px; font-size: 0.82rem; }
 
     /* Tables: tighter */
     th, td { padding: 6px 8px; font-size: 0.8rem; }
 
-    /* Order form */
-    .oir-main { flex-direction: column; align-items: stretch; }
+    /* ---- Order Form (New Order page) ---- */
+    .order-item-row { padding: 10px 12px; }
+    .oir-main { flex-direction: column; align-items: stretch; gap: 8px; }
     .oir-name { min-width: auto; }
-    .oir-qty-group { flex-direction: row; justify-content: space-between; gap: 8px; }
-    .oir-notes { width: 100%; min-width: auto; }
-    .order-actions { flex-direction: column; }
+    .oir-name .item-name { font-size: 0.95rem; }
+    .stock-badge { margin-left: 4px; }
+
+    /* Wine qty groups: side by side with labels */
+    .oir-qty-group {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+    }
+    .oir-qty-label { font-size: 0.75rem; min-width: 50px; }
+
+    /* Bigger stepper for touch */
+    .stepper-btn { width: 40px; height: 40px; font-size: 1.2rem; }
+    .stepper-input { width: 54px; height: 40px; font-size: 1rem; }
+
+    .oir-notes { width: 100%; min-width: auto; font-size: 0.9rem; padding: 8px 10px; }
+    .category-header { padding: 10px 12px; }
+    .category-header h3 { font-size: 0.92rem; }
+    .order-actions { flex-direction: column; gap: 8px; }
     .order-actions .btn { width: 100%; }
 
-    /* Fulfillment queue */
+    /* ---- Fulfillment Queue ---- */
     .fulfillment-item { padding: 10px 12px; }
-    .fulfillment-item-label { flex-wrap: wrap; }
+    .fulfillment-item-label { flex-wrap: nowrap; gap: 8px; }
+    .fulfillment-item input[type="checkbox"] { width: 22px; height: 22px; }
+    .fulfillment-item-info .item-name { font-size: 0.92rem; }
+    .fulfillment-item-info .item-detail { font-size: 0.8rem; }
     .fulfillment-fields { margin-left: 0; flex-direction: column; gap: 6px; }
-    .fulfillment-fields input { width: 100%; min-width: 0; }
+    .fulfillment-fields input { width: 100%; min-width: 0; padding: 8px 10px; font-size: 0.88rem; }
     .fulfillment-tracking-input { min-width: 0 !important; }
-    .bulk-toolbar .btn-status-pick { padding: 5px 8px; font-size: 0.78rem; }
-    .bulk-status-label { display: none; }
+    .fulfillment-field-label { font-size: 0.78rem; }
+    .fulfillment-card-header { padding: 10px 12px; }
+    .fulfillment-card-header strong { font-size: 0.95rem; }
+    .fulfillment-card-header .order-info { font-size: 0.78rem; margin-left: 0; display: block; }
+    .fulfillment-card-actions { width: 100%; justify-content: flex-start; margin-top: 4px; }
 
-    /* Catalog */
-    .catalog-stores { flex-wrap: wrap; }
-    .catalog-row { padding: 10px 12px; }
-    .catalog-name-input { max-width: none; }
+    /* Bulk toolbar: wrap status buttons into a grid */
+    .bulk-toolbar { padding: 10px 12px; }
+    .bulk-toolbar-inner { gap: 6px; }
+    .bulk-status-label { display: none; }
+    .btn-status-pick { padding: 6px 10px; font-size: 0.78rem; flex: 1 0 auto; text-align: center; }
+
+    /* ---- Item Catalog ---- */
+    .catalog-row { padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 8px; }
+    .catalog-row-info { flex: 1; }
+    .catalog-name-input { max-width: none; font-size: 0.92rem; padding: 6px 8px; }
+    .catalog-row-fields { flex-direction: column; }
+    .catalog-row-fields input { min-width: 0; width: 100%; padding: 8px 10px; }
+    .catalog-stores { flex-wrap: wrap; gap: 6px; width: 100%; }
+    .store-check { font-size: 0.82rem; gap: 4px; }
+    .store-check input { width: 18px; height: 18px; }
+    .catalog-delete-btn { align-self: flex-end; padding: 6px 12px !important; font-size: 1rem !important; }
+    .catalog-add-row { flex-direction: column; gap: 6px; padding: 10px 12px; }
+    .catalog-add-row .catalog-add-input { width: 100%; max-width: none; }
+    .catalog-add-row .btn { width: 100%; }
+    .stock-status-select { width: 100%; padding: 8px 10px; font-size: 0.88rem; }
 
     /* Status badges */
     .status-badge { font-size: 0.72rem; padding: 3px 8px; }
@@ -1205,9 +1260,12 @@ tr:hover {
     .modal { padding: 20px; width: 95%; }
 
     /* Toast */
-    .toast { left: 12px; right: 12px; bottom: 12px; text-align: center; }
+    .toast { left: 12px; right: 12px; bottom: 12px; text-align: center; font-size: 0.9rem; }
 
     /* Filter bar */
     .filter-bar { flex-direction: column; }
-    .filter-bar select { width: 100%; }
+    .filter-bar select { width: 100%; padding: 10px 12px; font-size: 0.9rem; }
+
+    /* Search input */
+    #catalog-search, #order-notes { font-size: 0.9rem; }
 }

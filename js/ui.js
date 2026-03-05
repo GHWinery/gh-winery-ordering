@@ -895,7 +895,7 @@ const UI = {
                     }).join('')}
                     <div class="catalog-add-row">
                         <input type="text" class="catalog-add-input" placeholder="New item name..." id="add-item-${escapeHtml(category).replace(/\s/g,'-')}">
-                        <input type="text" class="catalog-add-input" placeholder="Unit (e.g. cases, boxes)" id="add-unit-${escapeHtml(category).replace(/\s/g,'-')}" style="max-width:140px">
+                        <input type="text" class="catalog-add-input catalog-add-unit" placeholder="Unit (e.g. cases, boxes)" id="add-unit-${escapeHtml(category).replace(/\s/g,'-')}">
                         <button class="btn btn-sm btn-primary" onclick="UI.addCatalogItem('${escapeHtml(category)}')">+ Add</button>
                     </div>
                 </div>

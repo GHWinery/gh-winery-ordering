@@ -135,6 +135,22 @@ const UI = {
                 </div></div>`;
         }
 
+        html += `<div class="card" style="margin-top:16px">
+            <div class="card-header"><h4>Add Custom Item</h4></div>
+            <div class="custom-item-form">
+                <div class="custom-item-row">
+                    <input type="text" id="custom-item-name" placeholder="Item name..." class="custom-item-input">
+                    <select id="custom-item-category" class="custom-item-input">
+                        ${CATEGORY_ORDER.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+                    </select>
+                    <input type="text" id="custom-item-unit" placeholder="Unit (e.g. cases, boxes)" class="custom-item-input custom-item-unit">
+                    <input type="number" id="custom-item-qty" min="1" value="1" class="custom-item-input custom-item-qty">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="UI.addCustomOrderItem()">+ Add</button>
+                </div>
+            </div>
+        </div>
+        <div id="custom-items-list"></div>`;
+
         html += '<div class="order-actions"><button type="submit" class="btn btn-primary">Submit Order</button></div></form>';
         container.innerHTML = html;
 
@@ -142,6 +158,68 @@ const UI = {
             e.preventDefault();
             await UI.submitNewOrder();
         });
+    },
+
+    async addCustomOrderItem() {
+        const nameInput = document.getElementById('custom-item-name');
+        const catSelect = document.getElementById('custom-item-category');
+        const unitInput = document.getElementById('custom-item-unit');
+        const qtyInput = document.getElementById('custom-item-qty');
+
+        const name = nameInput.value.trim();
+        if (!name) { showToast('Enter an item name', 'warning'); return; }
+
+        const category = catSelect.value;
+        const unit = unitInput.value.trim() || 'units';
+        const qty = parseInt(qtyInput.value) || 1;
+        const team = CATEGORY_TEAM_MAP[category];
+        const locations = ['Main Winery', 'Jacktown', 'Westmoreland'];
+
+        // Add to catalog if it doesn't exist
+        const exists = SUPPLY_CATALOG.find(i => i.item_name === name && i.category === category);
+        if (!exists) {
+            SUPPLY_CATALOG.push({
+                item_name: name, category, unit, available_at: locations,
+                fulfillment_team: team
+            });
+            try {
+                await db.from('supply_catalog').insert({
+                    item_name: name, category, unit, available_at: locations
+                });
+            } catch (err) {
+                console.warn('Could not save to catalog:', err);
+            }
+        }
+
+        // Add a row to the custom items list
+        const list = document.getElementById('custom-items-list');
+        const esc = escapeHtml(name);
+        const row = document.createElement('div');
+        row.className = 'order-item-row';
+        row.dataset.item = name;
+        row.dataset.category = category;
+        row.dataset.unit = unit;
+        row.innerHTML = `<div class="oir-main">
+            <div class="oir-name">
+                <span class="item-name">${esc}</span>
+                <span style="font-size:0.8rem;color:var(--color-text-light);margin-left:6px">${escapeHtml(category)} &middot; ${escapeHtml(unit)}</span>
+            </div>
+            <div class="oir-stepper">
+                <button type="button" class="stepper-btn stepper-minus" onclick="UI.stepQty(this,-1)">-</button>
+                <input type="number" min="0" value="${qty}" class="stepper-input" data-qty-for="${esc}">
+                <button type="button" class="stepper-btn stepper-plus" onclick="UI.stepQty(this,1)">+</button>
+            </div>
+            <input type="text" class="oir-notes" placeholder="Notes" data-notes-for="${esc}">
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.order-item-row').remove()">Remove</button>
+        </div>`;
+        list.appendChild(row);
+
+        // Clear inputs
+        nameInput.value = '';
+        unitInput.value = '';
+        qtyInput.value = '1';
+        nameInput.focus();
+        showToast(`${name} added to order`, 'success');
     },
 
     stepQty(btn, delta) {

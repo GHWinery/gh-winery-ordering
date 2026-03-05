@@ -576,13 +576,13 @@ const UI = {
             }
 
             // Toolbar: always visible, selection count updates dynamically
-            let html = `<div class="bulk-toolbar" style="background:#fff;padding:14px 16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:16px;position:sticky;top:0;z-index:10;">
-                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            let html = `<div class="bulk-toolbar">
+                <div class="bulk-toolbar-inner">
                     <button class="btn btn-sm btn-outline" onclick="UI.bulkSelectAll()">Select All</button>
                     <button class="btn btn-sm btn-outline" onclick="UI.bulkDeselectAll()">Clear</button>
-                    <span style="color:#666;font-size:0.9rem" id="bulk-count">0 selected</span>
+                    <span class="bulk-count-label" id="bulk-count">0 selected</span>
                     <span style="flex:1"></span>
-                    <span style="font-weight:600;font-size:0.85rem;color:#666">Set status:</span>
+                    <span class="bulk-status-label">Set status:</span>
                     ${statuses.map(s => `<button class="btn btn-sm btn-status-pick" data-bulk-to="${s}" onclick="UI.bulkSetStatus('${s}')" style="opacity:0.7">${STATUS_LABELS[s]}</button>`).join('')}
                 </div>
             </div>`;
@@ -590,24 +590,24 @@ const UI = {
             for (const oid of Object.keys(byOrder)) {
                 const group = byOrder[oid];
                 html += `<div class="fulfillment-card">
-                    <div class="fulfillment-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="fulfillment-card-header">
                         <div>
                             <strong>${escapeHtml(group.order.store_location)}</strong>
-                            <span class="order-info" style="margin-left:8px">
+                            <span class="order-info">
                                 ${formatDate(group.order.created_at)} &middot; ${escapeHtml(group.order.profiles?.name || 'Unknown')}
                             </span>
                         </div>
-                        <div style="display:flex;gap:6px;align-items:center">
+                        <div class="fulfillment-card-actions">
                             <button class="btn btn-sm btn-outline" onclick="UI.selectOrderItems('${oid}')">Select All</button>
                             <a href="#" class="btn btn-sm btn-outline" onclick="App.viewOrder('${oid}');return false;">View Order</a>
                         </div>
                     </div>
                     ${group.items.map(item => {
-                        return `<div class="fulfillment-item" style="flex-wrap:wrap">
-                            <label style="display:flex;align-items:center;cursor:pointer;flex:1;min-width:0;gap:10px" for="chk-${item.id}">
-                                <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" onchange="UI.updateBulkCount()" style="width:18px;height:18px;flex-shrink:0">
-                                <div class="fulfillment-item-info" style="flex:1">
-                                    <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--color-primary)">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
+                        return `<div class="fulfillment-item">
+                            <label class="fulfillment-item-label" for="chk-${item.id}">
+                                <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" onchange="UI.updateBulkCount()">
+                                <div class="fulfillment-item-info">
+                                    <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
                                     <span class="item-detail">
                                         ${item.quantity} ${escapeHtml(item.unit)} &middot; ${escapeHtml(item.category)}
                                         ${item.notes ? ` &middot; "${escapeHtml(item.notes)}"` : ''}
@@ -615,11 +615,11 @@ const UI = {
                                 </div>
                                 <span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span>
                             </label>
-                            <div class="fulfillment-fields" style="display:flex;gap:8px;align-items:center;margin-left:28px;margin-top:4px;width:100%" onclick="event.stopPropagation()">
-                                <label style="font-size:0.8rem;color:#666;white-space:nowrap">Est. Delivery:</label>
-                                <input type="date" class="fulfillment-date-input" value="${item.estimated_delivery_date || ''}" data-item-id="${item.id}" onchange="UI.saveFulfillmentField(this.dataset.itemId, 'estimated_delivery_date', this.value)" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:0.85rem;font-family:inherit">
-                                <label style="font-size:0.8rem;color:#666;white-space:nowrap;margin-left:8px">Tracking:</label>
-                                <input type="text" class="fulfillment-tracking-input" placeholder="Tracking #" value="${escapeHtml(item.tracking_number || '')}" data-item-id="${item.id}" onchange="UI.saveFulfillmentField(this.dataset.itemId, 'tracking_number', this.value.trim())" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:0.85rem;font-family:inherit;flex:1;min-width:120px">
+                            <div class="fulfillment-fields" onclick="event.stopPropagation()">
+                                <label class="fulfillment-field-label">Est. Delivery:</label>
+                                <input type="date" class="fulfillment-date-input" value="${item.estimated_delivery_date || ''}" data-item-id="${item.id}" onchange="UI.saveFulfillmentField(this.dataset.itemId, 'estimated_delivery_date', this.value)">
+                                <label class="fulfillment-field-label">Tracking:</label>
+                                <input type="text" class="fulfillment-tracking-input" placeholder="Tracking #" value="${escapeHtml(item.tracking_number || '')}" data-item-id="${item.id}" onchange="UI.saveFulfillmentField(this.dataset.itemId, 'tracking_number', this.value.trim())">
                             </div>
                         </div>`;
                     }).join('')}
@@ -716,11 +716,11 @@ const UI = {
 
             let html = '';
             if (canReceive) {
-                html += `<div class="bulk-toolbar" style="background:#fff;padding:14px 16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:16px;position:sticky;top:0;z-index:10;">
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                html += `<div class="bulk-toolbar">
+                    <div class="bulk-toolbar-inner">
                         <button class="btn btn-sm btn-outline" onclick="UI.recvSelectAll()">Select All</button>
                         <button class="btn btn-sm btn-outline" onclick="UI.recvDeselectAll()">Clear</button>
-                        <span style="color:#666;font-size:0.9rem" id="recv-count">0 selected</span>
+                        <span class="bulk-count-label" id="recv-count">0 selected</span>
                         <span style="flex:1"></span>
                         <button class="btn btn-sm btn-primary" onclick="UI.bulkReceive()">Mark Received</button>
                     </div>
@@ -730,23 +730,23 @@ const UI = {
             for (const oid of Object.keys(byOrder)) {
                 const group = byOrder[oid];
                 html += `<div class="fulfillment-card">
-                    <div class="fulfillment-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="fulfillment-card-header">
                         <div>
                             <strong>${escapeHtml(group.order.store_location)}</strong>
-                            <span style="color:#666;font-size:0.85rem;margin-left:8px">${formatDate(group.order.created_at)}</span>
-                            <span style="color:#999;font-size:0.85rem;margin-left:8px">by ${escapeHtml(group.order.profiles?.name || 'Unknown')}</span>
+                            <span class="order-info">${formatDate(group.order.created_at)}</span>
+                            <span class="order-info">by ${escapeHtml(group.order.profiles?.name || 'Unknown')}</span>
                         </div>
-                        <div style="display:flex;gap:6px;">
+                        <div class="fulfillment-card-actions">
                             ${canReceive ? `<button class="btn btn-sm btn-outline" onclick="UI.recvSelectOrder('${oid}')">Select All</button>` : ''}
                             <a href="#" class="btn btn-sm btn-outline" onclick="App.viewOrder('${oid}');return false;">View Order</a>
                         </div>
                     </div>
                     ${group.items.map(item => {
-                        return `<div class="fulfillment-item" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--color-border-light);">
-                            ${canReceive ? `<input type="checkbox" class="recv-check" data-item-id="${item.id}" data-order-id="${item.order_id}" onchange="UI.updateRecvCount()" style="width:18px;height:18px;flex-shrink:0">` : ''}
-                            <div style="flex:1">
+                        return `<div class="fulfillment-item">
+                            ${canReceive ? `<input type="checkbox" class="recv-check" data-item-id="${item.id}" data-order-id="${item.order_id}" onchange="UI.updateRecvCount()">` : ''}
+                            <div class="fulfillment-item-info">
                                 <span class="item-name">${escapeHtml(item.item_name)}</span>
-                                <span class="item-detail" style="color:#666;font-size:0.85rem;margin-left:8px">
+                                <span class="item-detail">
                                     ${item.quantity} ${escapeHtml(item.unit)} &middot; ${escapeHtml(item.category)}
                                     ${item.notes ? ` &middot; "${escapeHtml(item.notes)}"` : ''}
                                 </span>

@@ -54,6 +54,8 @@ CREATE TABLE order_items (
     status TEXT NOT NULL DEFAULT 'pending',
     received_by_store BOOLEAN NOT NULL DEFAULT FALSE,
     notes TEXT DEFAULT '',
+    estimated_delivery_date DATE,
+    tracking_number TEXT DEFAULT '',
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

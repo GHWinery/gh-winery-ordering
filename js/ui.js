@@ -299,12 +299,14 @@ const UI = {
 
                 itemsHtml += `<div class="order-items-group"><h4>${escapeHtml(category)} (${teamLabel})</h4>
                     <div class="table-container"><table>
-                    <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th><th>Received</th><th>Notes</th>${canConfirm ? '<th></th>' : ''}</tr></thead>
+                    <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th><th>Est. Delivery</th><th>Tracking</th><th>Received</th><th>Notes</th>${canConfirm ? '<th></th>' : ''}</tr></thead>
                     <tbody>${items.map(item => `<tr>
                         <td>${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" title="View product">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</td>
                         <td><strong>${item.quantity}</strong></td>
                         <td>${escapeHtml(item.unit)}</td>
                         <td><span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span></td>
+                        <td>${item.estimated_delivery_date ? formatDate(item.estimated_delivery_date) : '-'}</td>
+                        <td>${item.tracking_number ? escapeHtml(item.tracking_number) : '-'}</td>
                         <td>${item.received_by_store ? '<span class="status-badge status-received">Received</span>' : (item.status === 'delivered' ? 'Awaiting' : '-')}</td>
                         <td>${escapeHtml(item.notes || '')}</td>
                         ${canConfirm ? `<td>${item.status === 'delivered' && !item.received_by_store
@@ -318,6 +320,7 @@ const UI = {
                         <h3>Order Details</h3>
                         <div>
                             <span class="status-badge status-${order.status}">${ORDER_STATUS_LABELS[order.status] || order.status}</span>
+                            <button class="btn btn-sm btn-outline" style="margin-left:8px" onclick="UI.printOrder()">Print</button>
                             ${order.status !== 'completed' ? `<button class="btn btn-sm btn-info" style="margin-left:8px" onclick="UI.editOrder('${order.id}')">Edit Order</button>` : ''}
                         </div>
                     </div>
@@ -342,6 +345,10 @@ const UI = {
             showToast('Item received!', 'success');
             await UI.renderOrderDetail(orderId);
         } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    },
+
+    printOrder() {
+        window.print();
     },
 
     // ==================== Edit Order ====================
@@ -596,17 +603,25 @@ const UI = {
                         </div>
                     </div>
                     ${group.items.map(item => {
-                        return `<label class="fulfillment-item" style="cursor:pointer" for="chk-${item.id}">
-                            <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" onchange="UI.updateBulkCount()" style="width:18px;height:18px;margin-right:10px;flex-shrink:0">
-                            <div class="fulfillment-item-info" style="flex:1">
-                                <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--color-primary)">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
-                                <span class="item-detail">
-                                    ${item.quantity} ${escapeHtml(item.unit)} &middot; ${escapeHtml(item.category)}
-                                    ${item.notes ? ` &middot; "${escapeHtml(item.notes)}"` : ''}
-                                </span>
+                        return `<div class="fulfillment-item" style="flex-wrap:wrap">
+                            <label style="display:flex;align-items:center;cursor:pointer;flex:1;min-width:0;gap:10px" for="chk-${item.id}">
+                                <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" onchange="UI.updateBulkCount()" style="width:18px;height:18px;flex-shrink:0">
+                                <div class="fulfillment-item-info" style="flex:1">
+                                    <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--color-primary)">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
+                                    <span class="item-detail">
+                                        ${item.quantity} ${escapeHtml(item.unit)} &middot; ${escapeHtml(item.category)}
+                                        ${item.notes ? ` &middot; "${escapeHtml(item.notes)}"` : ''}
+                                    </span>
+                                </div>
+                                <span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span>
+                            </label>
+                            <div class="fulfillment-fields" style="display:flex;gap:8px;align-items:center;margin-left:28px;margin-top:4px;width:100%" onclick="event.stopPropagation()">
+                                <label style="font-size:0.8rem;color:#666;white-space:nowrap">Est. Delivery:</label>
+                                <input type="date" class="fulfillment-date-input" value="${item.estimated_delivery_date || ''}" data-item-id="${item.id}" onchange="UI.saveFulfillmentField(this.dataset.itemId, 'estimated_delivery_date', this.value)" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:0.85rem;font-family:inherit">
+                                <label style="font-size:0.8rem;color:#666;white-space:nowrap;margin-left:8px">Tracking:</label>
+                                <input type="text" class="fulfillment-tracking-input" placeholder="Tracking #" value="${escapeHtml(item.tracking_number || '')}" data-item-id="${item.id}" onchange="UI.saveFulfillmentField(this.dataset.itemId, 'tracking_number', this.value.trim())" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:4px;font-size:0.85rem;font-family:inherit;flex:1;min-width:120px">
                             </div>
-                            <span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span>
-                        </label>`;
+                        </div>`;
                     }).join('')}
                 </div>`;
             }
@@ -635,6 +650,15 @@ const UI = {
     selectOrderItems(orderId) {
         document.querySelectorAll(`.bulk-check[data-order-id="${orderId}"]`).forEach(cb => cb.checked = true);
         this.updateBulkCount();
+    },
+
+    async saveFulfillmentField(itemId, field, value) {
+        try {
+            await Orders.updateItem(itemId, { [field]: value || null });
+            showToast('Saved', 'success');
+        } catch (err) {
+            showToast('Error: ' + err.message, 'error');
+        }
     },
 
     async bulkSetStatus(newStatus) {

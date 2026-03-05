@@ -747,11 +747,11 @@ const UI = {
             grouped[item.category].push(item);
         }
 
-        let html = '<p style="color:#666;margin-bottom:16px;font-size:0.9rem">Set suppliers and product URLs for non-wine items so the ordering team knows exactly what to buy.</p>';
+        const locations = ['Main Winery', 'Jacktown', 'Westmoreland'];
+        let html = '<p style="color:#666;margin-bottom:16px;font-size:0.9rem">Manage items, set suppliers/URLs, and choose which stores each item appears for.</p>';
 
         for (const category of CATEGORY_ORDER) {
-            const items = grouped[category];
-            if (!items) continue;
+            const items = grouped[category] || [];
             const isWine = category === 'Wine';
 
             html += `<div class="category-section">
@@ -759,45 +759,50 @@ const UI = {
                     <h3><span class="toggle-icon">&#9662;</span> ${escapeHtml(category)} <span style="font-weight:400;font-size:0.85rem;opacity:0.8">(${items.length} items)</span></h3>
                 </div>
                 <div class="category-items">
-                    ${isWine ? items.map(item => `
-                        <div class="catalog-row">
+                    ${items.map(item => {
+                        const esc = escapeHtml(item.item_name);
+                        const avail = item.available_at || locations;
+                        return `<div class="catalog-row catalog-row-editable">
                             <div class="catalog-row-info">
-                                <input type="text" class="catalog-name-input" value="${escapeHtml(item.item_name)}"
-                                    data-catalog-item="${escapeHtml(item.item_name)}"
+                                <input type="text" class="catalog-name-input" value="${esc}"
+                                    data-catalog-item="${esc}"
                                     data-catalog-category="${escapeHtml(item.category)}"
                                     onchange="UI.saveCatalogName(this)">
                                 <span class="item-unit">${escapeHtml(item.unit)}</span>
                             </div>
-                            <select class="stock-status-select" data-catalog-item="${escapeHtml(item.item_name)}" data-catalog-category="${escapeHtml(item.category)}" onchange="UI.saveCatalogField(this)" data-catalog-field="stock_status">
+                            ${isWine ? `
+                            <select class="stock-status-select" data-catalog-item="${esc}" data-catalog-category="${escapeHtml(item.category)}" onchange="UI.saveCatalogField(this)" data-catalog-field="stock_status">
                                 <option value="in_stock" ${(item.stock_status || 'in_stock') === 'in_stock' ? 'selected' : ''}>In Stock</option>
                                 <option value="out_of_stock" ${item.stock_status === 'out_of_stock' ? 'selected' : ''}>Out of Stock</option>
                                 <option value="coming_soon" ${item.stock_status === 'coming_soon' ? 'selected' : ''}>Coming Soon</option>
                             </select>
-                        </div>
-                    `).join('') : items.map(item => `
-                        <div class="catalog-row catalog-row-editable">
-                            <div class="catalog-row-info">
-                                <input type="text" class="catalog-name-input" value="${escapeHtml(item.item_name)}"
-                                    data-catalog-item="${escapeHtml(item.item_name)}"
-                                    data-catalog-category="${escapeHtml(item.category)}"
-                                    onchange="UI.saveCatalogName(this)">
-                                <span class="item-unit">${escapeHtml(item.unit)}</span>
-                            </div>
+                            ` : `
                             <div class="catalog-row-fields">
                                 <input type="text" placeholder="Supplier..." value="${escapeHtml(item.supplier || '')}"
-                                    data-catalog-item="${escapeHtml(item.item_name)}"
+                                    data-catalog-item="${esc}"
                                     data-catalog-category="${escapeHtml(item.category)}"
                                     data-catalog-field="supplier"
                                     onchange="UI.saveCatalogField(this)">
                                 <input type="url" placeholder="Product URL..." value="${escapeHtml(item.product_url || '')}"
-                                    data-catalog-item="${escapeHtml(item.item_name)}"
+                                    data-catalog-item="${esc}"
                                     data-catalog-category="${escapeHtml(item.category)}"
                                     data-catalog-field="product_url"
                                     onchange="UI.saveCatalogField(this)">
                                 ${item.product_url ? `<a href="${escapeHtml(item.product_url)}" target="_blank" class="btn btn-sm btn-outline" title="Open link">&#8599;</a>` : ''}
                             </div>
-                        </div>
-                    `).join('')}
+                            `}
+                            <div class="catalog-stores">
+                                ${locations.map(loc => `<label class="store-check"><input type="checkbox" ${avail.includes(loc) ? 'checked' : ''}
+                                    data-catalog-item="${esc}" data-catalog-category="${escapeHtml(item.category)}" data-store="${loc}"
+                                    onchange="UI.saveCatalogStores(this)">${loc.replace('Main Winery','Main').replace('Westmoreland','West')}</label>`).join('')}
+                            </div>
+                            <button class="btn btn-sm btn-danger catalog-delete-btn" onclick="UI.deleteCatalogItem('${esc}','${escapeHtml(item.category)}')" title="Delete item">&times;</button>
+                        </div>`;
+                    }).join('')}
+                    <div class="catalog-add-row">
+                        <input type="text" class="catalog-add-input" placeholder="New item name..." id="add-item-${escapeHtml(category).replace(/\s/g,'-')}">
+                        <button class="btn btn-sm btn-primary" onclick="UI.addCatalogItem('${escapeHtml(category)}')">+ Add Item</button>
+                    </div>
                 </div>
             </div>`;
         }
@@ -876,6 +881,78 @@ const UI = {
             showToast('Saved', 'success');
         } catch (err) {
             showToast('Error saving: ' + err.message, 'error');
+        }
+    },
+
+    async saveCatalogStores(checkbox) {
+        const itemName = checkbox.dataset.catalogItem;
+        const category = checkbox.dataset.catalogCategory;
+        const row = checkbox.closest('.catalog-row');
+        const checked = [...row.querySelectorAll('[data-store]')].filter(cb => cb.checked).map(cb => cb.dataset.store);
+
+        const catalogItem = SUPPLY_CATALOG.find(i => i.item_name === itemName && i.category === category);
+        if (catalogItem) catalogItem.available_at = checked;
+
+        try {
+            const { data } = await db.from('supply_catalog').select('id').eq('item_name', itemName).eq('category', category).maybeSingle();
+            if (data) {
+                await db.from('supply_catalog').update({ available_at: checked }).eq('id', data.id);
+            } else {
+                await db.from('supply_catalog').insert({
+                    item_name: itemName, category, unit: catalogItem?.unit || 'units', available_at: checked
+                });
+            }
+            showToast('Stores updated', 'success');
+        } catch (err) {
+            showToast('Error: ' + err.message, 'error');
+        }
+    },
+
+    async deleteCatalogItem(itemName, category) {
+        const confirmed = await showConfirm(`Delete "${itemName}" from the catalog?`);
+        if (!confirmed) return;
+
+        const idx = SUPPLY_CATALOG.findIndex(i => i.item_name === itemName && i.category === category);
+        if (idx >= 0) SUPPLY_CATALOG.splice(idx, 1);
+
+        try {
+            await db.from('supply_catalog').delete().eq('item_name', itemName).eq('category', category);
+            showToast('Item deleted', 'success');
+            this.renderCatalog();
+        } catch (err) {
+            showToast('Error: ' + err.message, 'error');
+        }
+    },
+
+    async addCatalogItem(category) {
+        const inputId = 'add-item-' + category.replace(/\s/g, '-');
+        const input = document.getElementById(inputId);
+        const name = input.value.trim();
+        if (!name) { showToast('Enter an item name', 'warning'); return; }
+
+        const exists = SUPPLY_CATALOG.find(i => i.item_name === name && i.category === category);
+        if (exists) { showToast('Item already exists in this category', 'warning'); return; }
+
+        const isWine = category === 'Wine';
+        const unit = isWine ? 'cases' : 'units';
+        const team = CATEGORY_TEAM_MAP[category];
+        const locations = ['Main Winery', 'Jacktown', 'Westmoreland'];
+
+        const newItem = {
+            item_name: name, category, unit, available_at: locations,
+            fulfillment_team: team
+        };
+
+        SUPPLY_CATALOG.push(newItem);
+
+        try {
+            await db.from('supply_catalog').insert({
+                item_name: name, category, unit, available_at: locations
+            });
+            showToast('Item added', 'success');
+            this.renderCatalog();
+        } catch (err) {
+            showToast('Error: ' + err.message, 'error');
         }
     }
 };

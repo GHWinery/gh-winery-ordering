@@ -678,7 +678,7 @@ const UI = {
         try {
             await Orders.bulkUpdateStatus(validIds, newStatus);
             await Orders.checkAndCompleteOrders(orderIds);
-            showToast(`${validIds.length} items → ${STATUS_LABELS[newStatus]}${skipMsg}`, 'success');
+            showToast(`${validIds.length} items → ${STATUS_LABELS[newStatus]}`, 'success');
             await UI.renderFulfillmentQueue();
         } catch (err) {
             showToast('Error: ' + err.message, 'error');

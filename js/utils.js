@@ -62,6 +62,12 @@ function escapeHtml(str) {
     return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+function normalizeUrl(url) {
+    if (!url) return url;
+    if (!/^https?:\/\//i.test(url)) return 'https://' + url;
+    return url;
+}
+
 function roleLabel(role) {
     const labels = {
         store_staff: 'Store Staff',

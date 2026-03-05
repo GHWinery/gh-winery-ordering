@@ -100,7 +100,7 @@ const UI = {
                         return `<div class="order-item-row" data-item="${esc}" data-category="${escapeHtml(item.category)}" data-unit="${escapeHtml(item.unit)}">
                             <div class="oir-main">
                                 <div class="oir-name">
-                                    ${item.product_url ? `<a href="${escapeHtml(item.product_url)}" target="_blank" class="item-name" title="View product">${esc}</a>` : `<span class="item-name">${esc}</span>`}
+                                    ${item.product_url ? `<a href="${normalizeUrl(escapeHtml(item.product_url))}" target="_blank" class="item-name" title="View product">${esc}</a>` : `<span class="item-name">${esc}</span>`}
                                     ${isWine && item.stock_status && item.stock_status !== 'in_stock' ? `<span class="stock-badge stock-${item.stock_status}">${item.stock_status === 'out_of_stock' ? 'Out of Stock' : 'Coming Soon'}</span>` : ''}
                                     ${isWine && (!item.stock_status || item.stock_status === 'in_stock') ? '<span class="stock-badge stock-in_stock">In Stock</span>' : ''}
                                 </div>
@@ -301,7 +301,7 @@ const UI = {
                     <div class="table-container"><table>
                     <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th><th>Est. Delivery</th><th>Tracking</th><th>Received</th><th>Notes</th>${canConfirm ? '<th></th>' : ''}</tr></thead>
                     <tbody>${items.map(item => `<tr>
-                        <td>${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" title="View product">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</td>
+                        <td>${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${normalizeUrl(escapeHtml(ci.product_url))}" target="_blank" title="View product">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</td>
                         <td><strong>${item.quantity}</strong></td>
                         <td>${escapeHtml(item.unit)}</td>
                         <td><span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span></td>
@@ -608,7 +608,7 @@ const UI = {
                             <label class="fulfillment-item-label" for="chk-${item.id}">
                                 <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" data-category="${escapeHtml(item.category)}" onchange="UI.updateBulkCount()">
                                 <div class="fulfillment-item-info">
-                                    <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
+                                    <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${normalizeUrl(escapeHtml(ci.product_url))}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
                                     <span class="item-detail">
                                         ${item.quantity} ${escapeHtml(item.unit)} &middot; ${escapeHtml(item.category)}
                                         ${item.notes ? ` &middot; "${escapeHtml(item.notes)}"` : ''}
@@ -882,7 +882,7 @@ const UI = {
                                     data-catalog-category="${escapeHtml(item.category)}"
                                     data-catalog-field="product_url"
                                     onchange="UI.saveCatalogField(this)">
-                                ${item.product_url ? `<a href="${escapeHtml(item.product_url)}" target="_blank" class="btn btn-sm btn-outline" title="Open link">&#8599;</a>` : ''}
+                                ${item.product_url ? `<a href="${normalizeUrl(escapeHtml(item.product_url))}" target="_blank" class="btn btn-sm btn-outline" title="Open link">&#8599;</a>` : ''}
                             </div>
                             `}
                             <div class="catalog-stores">

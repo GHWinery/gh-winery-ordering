@@ -725,13 +725,21 @@ const UI = {
                 <div class="category-items">
                     ${isWine ? items.map(item => `
                         <div class="catalog-row">
-                            <span class="item-name">${escapeHtml(item.item_name)}</span>
-                            <span class="item-unit">${escapeHtml(item.unit)}</span>
+                            <div class="catalog-row-info">
+                                <input type="text" class="catalog-name-input" value="${escapeHtml(item.item_name)}"
+                                    data-catalog-item="${escapeHtml(item.item_name)}"
+                                    data-catalog-category="${escapeHtml(item.category)}"
+                                    onchange="UI.saveCatalogName(this)">
+                                <span class="item-unit">${escapeHtml(item.unit)}</span>
+                            </div>
                         </div>
                     `).join('') : items.map(item => `
                         <div class="catalog-row catalog-row-editable">
                             <div class="catalog-row-info">
-                                <span class="item-name">${escapeHtml(item.item_name)}</span>
+                                <input type="text" class="catalog-name-input" value="${escapeHtml(item.item_name)}"
+                                    data-catalog-item="${escapeHtml(item.item_name)}"
+                                    data-catalog-category="${escapeHtml(item.category)}"
+                                    onchange="UI.saveCatalogName(this)">
                                 <span class="item-unit">${escapeHtml(item.unit)}</span>
                             </div>
                             <div class="catalog-row-fields">
@@ -754,6 +762,45 @@ const UI = {
         }
 
         container.innerHTML = html;
+    },
+
+    async saveCatalogName(input) {
+        const oldName = input.dataset.catalogItem;
+        const category = input.dataset.catalogCategory;
+        const newName = input.value.trim();
+        if (!newName || newName === oldName) return;
+
+        // Update in-memory catalog
+        const catalogItem = SUPPLY_CATALOG.find(i => i.item_name === oldName && i.category === category);
+        if (catalogItem) catalogItem.item_name = newName;
+
+        // Update data attributes on all inputs in this row
+        input.closest('.catalog-row').querySelectorAll('[data-catalog-item]').forEach(el => {
+            el.dataset.catalogItem = newName;
+        });
+
+        // Save to Supabase
+        try {
+            const { data } = await db
+                .from('supply_catalog')
+                .select('id')
+                .eq('item_name', oldName)
+                .eq('category', category)
+                .maybeSingle();
+
+            if (data) {
+                await db.from('supply_catalog').update({ item_name: newName }).eq('id', data.id);
+            } else {
+                await db.from('supply_catalog').insert({
+                    item_name: newName,
+                    category: category,
+                    unit: catalogItem?.unit || 'units'
+                });
+            }
+            showToast('Name saved', 'success');
+        } catch (err) {
+            showToast('Error saving: ' + err.message, 'error');
+        }
     },
 
     async saveCatalogField(input) {

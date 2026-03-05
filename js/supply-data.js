@@ -167,13 +167,14 @@ async function loadCatalogUrls() {
     try {
         const { data, error } = await db
             .from('supply_catalog')
-            .select('item_name, category, product_url, supplier');
+            .select('item_name, category, product_url, supplier, stock_status');
         if (error || !data) return;
         for (const row of data) {
             const item = SUPPLY_CATALOG.find(i => i.item_name === row.item_name && i.category === row.category);
             if (item) {
                 if (row.product_url) item.product_url = row.product_url;
                 if (row.supplier) item.supplier = row.supplier;
+                if (row.stock_status) item.stock_status = row.stock_status;
             }
         }
     } catch (e) {

@@ -101,6 +101,8 @@ const UI = {
                             <div class="oir-main">
                                 <div class="oir-name">
                                     ${item.product_url ? `<a href="${escapeHtml(item.product_url)}" target="_blank" class="item-name" title="View product">${esc}</a>` : `<span class="item-name">${esc}</span>`}
+                                    ${isWine && item.stock_status && item.stock_status !== 'in_stock' ? `<span class="stock-badge stock-${item.stock_status}">${item.stock_status === 'out_of_stock' ? 'Out of Stock' : 'Coming Soon'}</span>` : ''}
+                                    ${isWine && (!item.stock_status || item.stock_status === 'in_stock') ? '<span class="stock-badge stock-in_stock">In Stock</span>' : ''}
                                 </div>
                                 ${isWine ? `
                                 <div class="oir-qty-group">
@@ -766,6 +768,11 @@ const UI = {
                                     onchange="UI.saveCatalogName(this)">
                                 <span class="item-unit">${escapeHtml(item.unit)}</span>
                             </div>
+                            <select class="stock-status-select" data-catalog-item="${escapeHtml(item.item_name)}" data-catalog-category="${escapeHtml(item.category)}" onchange="UI.saveCatalogField(this)" data-catalog-field="stock_status">
+                                <option value="in_stock" ${(item.stock_status || 'in_stock') === 'in_stock' ? 'selected' : ''}>In Stock</option>
+                                <option value="out_of_stock" ${item.stock_status === 'out_of_stock' ? 'selected' : ''}>Out of Stock</option>
+                                <option value="coming_soon" ${item.stock_status === 'coming_soon' ? 'selected' : ''}>Coming Soon</option>
+                            </select>
                         </div>
                     `).join('') : items.map(item => `
                         <div class="catalog-row catalog-row-editable">

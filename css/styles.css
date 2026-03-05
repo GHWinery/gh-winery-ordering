@@ -502,6 +502,33 @@ tr:hover {
     gap: 2px;
 }
 
+.stock-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+.stock-in_stock { background: #e8f5e9; color: #2e7d32; }
+.stock-out_of_stock { background: #ffebee; color: #c62828; }
+.stock-coming_soon { background: #fff8e1; color: #f57f17; }
+
+.stock-status-select {
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.stock-status-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
 .oir-qty-label {
     font-size: 0.7rem;
     color: var(--color-text-light);

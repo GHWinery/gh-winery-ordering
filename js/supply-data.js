@@ -11,9 +11,11 @@ const CATEGORY_TEAM_MAP = {
     'Bar Supplies': 'supplies'
 };
 
+const ALL_ITEM_STATUSES = ['pending', 'packed', 'ordered', 'out_for_delivery', 'delivered'];
+
 const TEAM_STATUSES = {
-    distribution: ['pending', 'packed', 'out_for_delivery', 'delivered'],
-    supplies: ['pending', 'ordered', 'out_for_delivery', 'delivered']
+    distribution: ALL_ITEM_STATUSES,
+    supplies: ALL_ITEM_STATUSES
 };
 
 const STATUS_LABELS = {

@@ -536,7 +536,7 @@ const UI = {
 
         const statusFilter = document.getElementById('fulfillment-status-filter');
         const prevStatus = statusFilter.value;
-        const statuses = team ? TEAM_STATUSES[team] : ['pending', 'packed', 'ordered', 'out_for_delivery', 'delivered'];
+        const statuses = ALL_ITEM_STATUSES;
         statusFilter.innerHTML = '<option value="all">All Active</option>' +
             statuses.map(s => `<option value="${s}">${STATUS_LABELS[s] || s}</option>`).join('');
         if ([...statusFilter.options].some(o => o.value === prevStatus)) statusFilter.value = prevStatus;
@@ -641,27 +641,14 @@ const UI = {
         const checked = document.querySelectorAll('.bulk-check:checked');
         if (checked.length === 0) { showToast('Select items first', 'warning'); return; }
 
-        // Filter out items where the status doesn't belong to their team
         const validIds = [];
         const orderIds = [];
-        let skipped = 0;
         checked.forEach(cb => {
-            const team = cb.dataset.team;
-            if (TEAM_STATUSES[team] && TEAM_STATUSES[team].includes(newStatus)) {
-                validIds.push(cb.dataset.itemId);
-                orderIds.push(cb.dataset.orderId);
-            } else {
-                skipped++;
-            }
+            validIds.push(cb.dataset.itemId);
+            orderIds.push(cb.dataset.orderId);
         });
 
-        if (validIds.length === 0) {
-            showToast(`"${STATUS_LABELS[newStatus]}" doesn't apply to the selected items' team`, 'warning');
-            return;
-        }
-
-        const skipMsg = skipped > 0 ? ` (${skipped} skipped — wrong team)` : '';
-        const confirmed = await showConfirm(`Set ${validIds.length} item(s) to "${STATUS_LABELS[newStatus]}"?${skipMsg}`);
+        const confirmed = await showConfirm(`Set ${validIds.length} item(s) to "${STATUS_LABELS[newStatus]}"?`);
         if (!confirmed) return;
 
         try {

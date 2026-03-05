@@ -145,8 +145,10 @@ const Orders = {
     },
 
     async unarchive(orderId) {
-        const { error } = await db.from('orders').update({ status: 'completed' }).eq('id', orderId);
+        // Temporarily set to submitted so checkAndCompleteOrder can recalculate
+        const { error } = await db.from('orders').update({ status: 'submitted' }).eq('id', orderId);
         if (error) throw error;
+        await this.checkAndCompleteOrder(orderId);
     },
 
     // Update a single item's fulfillment status
@@ -217,11 +219,10 @@ const Orders = {
             .eq('received_by_store', false)
             .order('updated_at', { ascending: true });
 
-        if (filters.location && filters.location !== 'all') {
-            query = query.eq('orders.store_location', filters.location);
-        }
         if (Auth.isStoreStaff()) {
             query = query.eq('orders.store_location', Auth.getLocation());
+        } else if (filters.location && filters.location !== 'all') {
+            query = query.eq('orders.store_location', filters.location);
         }
 
         const { data, error } = await query;
@@ -259,12 +260,17 @@ const Orders = {
     async getDashboardStats() {
         let query = db
             .from('order_items')
-            .select('status, received_by_store, fulfillment_team');
+            .select('status, received_by_store, fulfillment_team, orders!inner(store_location, status)');
+
+        // Exclude items from archived orders
+        query = query.neq('orders.status', 'archived');
 
         if (Auth.isDistribution()) {
             query = query.eq('fulfillment_team', 'distribution');
         } else if (Auth.isSupplies()) {
             query = query.eq('fulfillment_team', 'supplies');
+        } else if (Auth.isStoreStaff()) {
+            query = query.eq('orders.store_location', Auth.getLocation());
         }
 
         const { data, error } = await query;

@@ -151,7 +151,10 @@ const UI = {
         input.value = val;
     },
 
+    submitting: false,
+
     async submitNewOrder() {
+        if (this.submitting) return;
         const rows = document.querySelectorAll('.order-item-row');
         const items = [];
         rows.forEach(row => {
@@ -188,6 +191,11 @@ const UI = {
         if (items.length === 0) { showToast('Enter a quantity for at least one item.', 'warning'); return; }
         const confirmed = await showConfirm(`Submit order with ${items.length} item(s)?`);
         if (!confirmed) return;
+
+        this.submitting = true;
+        const submitBtn = document.querySelector('#new-order-form .btn-primary');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
+
         try {
             const notes = document.getElementById('order-notes').value.trim();
             const location = Auth.getLocation() || this.selectedOrderLocation;
@@ -196,6 +204,9 @@ const UI = {
             App.navigate('orders');
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
+        } finally {
+            this.submitting = false;
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Order'; }
         }
     },
 
@@ -580,20 +591,33 @@ const UI = {
         const checked = document.querySelectorAll('.bulk-check:checked');
         if (checked.length === 0) { showToast('Select items first', 'warning'); return; }
 
-        const confirmed = await showConfirm(`Set ${checked.length} item(s) to "${STATUS_LABELS[newStatus]}"?`);
-        if (!confirmed) return;
-
-        const itemIds = [];
+        // Filter out items where the status doesn't belong to their team
+        const validIds = [];
         const orderIds = [];
+        let skipped = 0;
         checked.forEach(cb => {
-            itemIds.push(cb.dataset.itemId);
-            orderIds.push(cb.dataset.orderId);
+            const team = cb.dataset.team;
+            if (TEAM_STATUSES[team] && TEAM_STATUSES[team].includes(newStatus)) {
+                validIds.push(cb.dataset.itemId);
+                orderIds.push(cb.dataset.orderId);
+            } else {
+                skipped++;
+            }
         });
 
+        if (validIds.length === 0) {
+            showToast(`"${STATUS_LABELS[newStatus]}" doesn't apply to the selected items' team`, 'warning');
+            return;
+        }
+
+        const skipMsg = skipped > 0 ? ` (${skipped} skipped — wrong team)` : '';
+        const confirmed = await showConfirm(`Set ${validIds.length} item(s) to "${STATUS_LABELS[newStatus]}"?${skipMsg}`);
+        if (!confirmed) return;
+
         try {
-            await Orders.bulkUpdateStatus(itemIds, newStatus);
+            await Orders.bulkUpdateStatus(validIds, newStatus);
             await Orders.checkAndCompleteOrders(orderIds);
-            showToast(`${itemIds.length} items → ${STATUS_LABELS[newStatus]}`, 'success');
+            showToast(`${validIds.length} items → ${STATUS_LABELS[newStatus]}${skipMsg}`, 'success');
             await UI.renderFulfillmentQueue();
         } catch (err) {
             showToast('Error: ' + err.message, 'error');

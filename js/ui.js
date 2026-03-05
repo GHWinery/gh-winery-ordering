@@ -579,6 +579,7 @@ const UI = {
             let html = `<div class="bulk-toolbar">
                 <div class="bulk-toolbar-inner">
                     <button class="btn btn-sm btn-outline" onclick="UI.bulkSelectAll()">Select All</button>
+                    <button class="btn btn-sm btn-outline" onclick="UI.bulkSelectByCategory('Wine')">Select Wine</button>
                     <button class="btn btn-sm btn-outline" onclick="UI.bulkDeselectAll()">Clear</button>
                     <span class="bulk-count-label" id="bulk-count">0 selected</span>
                     <span style="flex:1"></span>
@@ -605,7 +606,7 @@ const UI = {
                     ${group.items.map(item => {
                         return `<div class="fulfillment-item">
                             <label class="fulfillment-item-label" for="chk-${item.id}">
-                                <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" onchange="UI.updateBulkCount()">
+                                <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" data-category="${escapeHtml(item.category)}" onchange="UI.updateBulkCount()">
                                 <div class="fulfillment-item-info">
                                     <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
                                     <span class="item-detail">
@@ -644,6 +645,11 @@ const UI = {
 
     bulkDeselectAll() {
         document.querySelectorAll('.bulk-check').forEach(cb => cb.checked = false);
+        this.updateBulkCount();
+    },
+
+    bulkSelectByCategory(category) {
+        document.querySelectorAll(`.bulk-check[data-category="${category}"]`).forEach(cb => cb.checked = true);
         this.updateBulkCount();
     },
 

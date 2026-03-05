@@ -495,6 +495,21 @@ tr:hover {
     font-weight: 500;
 }
 
+.oir-qty-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.oir-qty-label {
+    font-size: 0.7rem;
+    color: var(--color-text-light);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
 .oir-name .item-unit {
     font-size: 0.8rem;
     color: var(--color-text-light);
@@ -603,7 +618,7 @@ tr:hover {
 .catalog-row .item-unit { font-size: 0.8rem; color: var(--color-text-light); margin-left: 6px; }
 
 .catalog-row-info {
-    flex: 0 0 280px;
+    flex: 0 0 350px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -618,7 +633,7 @@ tr:hover {
     padding: 4px 6px;
     background: transparent;
     width: 100%;
-    max-width: 260px;
+    max-width: 320px;
 }
 
 .catalog-name-input:hover {

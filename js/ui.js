@@ -101,13 +101,31 @@ const UI = {
                             <div class="oir-main">
                                 <div class="oir-name">
                                     ${item.product_url ? `<a href="${escapeHtml(item.product_url)}" target="_blank" class="item-name" title="View product">${esc}</a>` : `<span class="item-name">${esc}</span>`}
-                                    <span class="item-unit">${escapeHtml(item.unit)}</span>
                                 </div>
+                                ${isWine ? `
+                                <div class="oir-qty-group">
+                                    <label class="oir-qty-label">Cases</label>
+                                    <div class="oir-stepper">
+                                        <button type="button" class="stepper-btn stepper-minus" onclick="UI.stepQty(this,-1)">-</button>
+                                        <input type="number" min="0" value="0" class="stepper-input" data-qty-for="${esc}">
+                                        <button type="button" class="stepper-btn stepper-plus" onclick="UI.stepQty(this,1)">+</button>
+                                    </div>
+                                </div>
+                                <div class="oir-qty-group">
+                                    <label class="oir-qty-label">Bottles (unlabeled)</label>
+                                    <div class="oir-stepper">
+                                        <button type="button" class="stepper-btn stepper-minus" onclick="UI.stepQty(this,-1)">-</button>
+                                        <input type="number" min="0" value="0" class="stepper-input" data-bottles-for="${esc}">
+                                        <button type="button" class="stepper-btn stepper-plus" onclick="UI.stepQty(this,1)">+</button>
+                                    </div>
+                                </div>
+                                ` : `
                                 <div class="oir-stepper">
                                     <button type="button" class="stepper-btn stepper-minus" onclick="UI.stepQty(this,-1)">-</button>
                                     <input type="number" min="0" value="0" class="stepper-input" data-qty-for="${esc}">
                                     <button type="button" class="stepper-btn stepper-plus" onclick="UI.stepQty(this,1)">+</button>
                                 </div>
+                                `}
                                 <input type="text" class="oir-notes" placeholder="Notes" data-notes-for="${esc}">
                             </div>
                         </div>`;
@@ -135,17 +153,33 @@ const UI = {
         const rows = document.querySelectorAll('.order-item-row');
         const items = [];
         rows.forEach(row => {
-            const qtyInput = row.querySelector('.stepper-input');
-            const qty = parseInt(qtyInput.value) || 0;
+            const itemName = row.dataset.item;
+            const notesInput = row.querySelector('.oir-notes');
+            const notes = notesInput ? notesInput.value.trim() : '';
+
+            // Cases (labeled) or non-wine qty
+            const qtyInput = row.querySelector('[data-qty-for]');
+            const qty = qtyInput ? (parseInt(qtyInput.value) || 0) : 0;
             if (qty > 0) {
-                const itemName = row.dataset.item;
-                const notesInput = row.querySelector('.oir-notes');
                 items.push({
                     item_name: itemName,
                     category: row.dataset.category,
                     quantity: qty,
                     unit: row.dataset.unit,
-                    notes: notesInput ? notesInput.value.trim() : ''
+                    notes
+                });
+            }
+
+            // Bottles (unlabeled wine)
+            const bottlesInput = row.querySelector('[data-bottles-for]');
+            const bottles = bottlesInput ? (parseInt(bottlesInput.value) || 0) : 0;
+            if (bottles > 0) {
+                items.push({
+                    item_name: itemName + ' (Unlabeled)',
+                    category: row.dataset.category,
+                    quantity: bottles,
+                    unit: 'bottles',
+                    notes
                 });
             }
         });

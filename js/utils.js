@@ -17,17 +17,24 @@ function formatDateTime(dateStr) {
     });
 }
 
+let _toastTimer = null;
 function showToast(message, type = '') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = 'toast' + (type ? ` toast-${type}` : '');
     toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3000);
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { toast.classList.add('hidden'); _toastTimer = null; }, 3000);
 }
 
 function showConfirm(message) {
     return new Promise(resolve => {
         const overlay = document.getElementById('confirm-modal');
+        // Guard against overlapping modals
+        if (!overlay.classList.contains('hidden')) {
+            resolve(false);
+            return;
+        }
         const msg = document.getElementById('confirm-message');
         const okBtn = document.getElementById('confirm-ok');
         const cancelBtn = document.getElementById('confirm-cancel');
@@ -52,7 +59,7 @@ function showConfirm(message) {
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function roleLabel(role) {

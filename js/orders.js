@@ -197,6 +197,10 @@ const Orders = {
 
         if (filters.status && filters.status !== 'all') {
             query = query.eq('status', filters.status);
+            // When filtering by a specific status, still exclude already-received items
+            if (filters.status === 'delivered') {
+                query = query.eq('received_by_store', false);
+            }
         } else {
             query = query.eq('received_by_store', false);
         }

@@ -255,7 +255,9 @@ const UI = {
 
             container.innerHTML = `<div class="table-container"><table>
                 <thead><tr><th>Date</th><th>Location</th><th>Created By</th><th>Status</th><th>Notes</th><th></th></tr></thead>
-                <tbody>${orders.map(o => `<tr>
+                <tbody>${orders.map(o => {
+                    const canManage = Auth.isAdmin() || o.created_by === Auth.currentUser.id;
+                    return `<tr>
                     <td>${formatDate(o.created_at)}</td>
                     <td>${escapeHtml(o.store_location)}</td>
                     <td>${escapeHtml(o.profiles?.name || 'Unknown')}</td>
@@ -263,11 +265,12 @@ const UI = {
                     <td>${escapeHtml(o.notes || '').substring(0, 50)}</td>
                     <td>
                         <button class="btn btn-sm btn-outline" onclick="App.viewOrder('${o.id}')">View</button>
-                        ${o.status !== 'completed' && o.status !== 'archived' ? `<button class="btn btn-sm btn-info" onclick="UI.editOrder('${o.id}')">Edit</button>` : ''}
-                        ${o.status === 'archived' ? `<button class="btn btn-sm btn-info" onclick="UI.unarchiveOrder('${o.id}')">Unarchive</button>` : `<button class="btn btn-sm btn-outline" onclick="UI.archiveOrder('${o.id}')">Archive</button>`}
-                        <button class="btn btn-sm btn-danger" onclick="UI.deleteOrderFromList('${o.id}')">Delete</button>
+                        ${canManage && o.status !== 'completed' && o.status !== 'archived' ? `<button class="btn btn-sm btn-info" onclick="UI.editOrder('${o.id}')">Edit</button>` : ''}
+                        ${canManage ? (o.status === 'archived' ? `<button class="btn btn-sm btn-info" onclick="UI.unarchiveOrder('${o.id}')">Unarchive</button>` : `<button class="btn btn-sm btn-outline" onclick="UI.archiveOrder('${o.id}')">Archive</button>`) : ''}
+                        ${canManage ? `<button class="btn btn-sm btn-danger" onclick="UI.deleteOrderFromList('${o.id}')">Delete</button>` : ''}
                     </td>
-                </tr>`).join('')}</tbody></table></div>`;
+                </tr>`;
+                }).join('')}</tbody></table></div>`;
         } catch (err) {
             container.innerHTML = `<div class="error-msg">Error: ${escapeHtml(err.message)}</div>`;
         }
@@ -390,6 +393,25 @@ const UI = {
                     </div>
                 </div>
                 ${itemsHtml}
+                <div class="card" style="margin-top:16px">
+                    <div class="card-header"><h4>Add Item</h4></div>
+                    <div style="padding:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                        <select id="edit-add-item" style="flex:1;min-width:180px;padding:8px">
+                            ${(() => {
+                                const catalog = getCatalogForLocation(order.store_location);
+                                let opts = '<option value="">Select item...</option>';
+                                for (const cat of CATEGORY_ORDER) {
+                                    const items = catalog[cat];
+                                    if (!items) continue;
+                                    opts += items.map(i => `<option value="${escapeHtml(i.item_name)}|${escapeHtml(i.category)}|${escapeHtml(i.unit)}">${escapeHtml(i.item_name)} (${escapeHtml(cat)})</option>`).join('');
+                                }
+                                return opts;
+                            })()}
+                        </select>
+                        <input type="number" id="edit-add-qty" min="1" value="1" style="width:70px;padding:8px;text-align:center">
+                        <button class="btn btn-sm btn-primary" onclick="UI.addItemToOrder('${orderId}')">+ Add</button>
+                    </div>
+                </div>
                 <div class="order-actions">
                     <button class="btn btn-outline" onclick="App.viewOrder('${orderId}')">Cancel</button>
                     <button class="btn btn-primary" onclick="UI.saveOrderEdits('${orderId}')">Save Changes</button>
@@ -419,12 +441,26 @@ const UI = {
                 }
             });
             await Promise.all(promises);
+            await Orders.checkAndCompleteOrder(orderId);
 
             showToast('Order updated!', 'success');
             App.viewOrder(orderId);
         } catch (err) {
             showToast('Error: ' + err.message, 'error');
         }
+    },
+
+    async addItemToOrder(orderId) {
+        const select = document.getElementById('edit-add-item');
+        const qtyInput = document.getElementById('edit-add-qty');
+        if (!select.value) { showToast('Select an item', 'warning'); return; }
+        const [itemName, category, unit] = select.value.split('|');
+        const qty = parseInt(qtyInput.value) || 1;
+        try {
+            await Orders.addItems(orderId, [{ item_name: itemName, category, quantity: qty, unit }]);
+            showToast('Item added', 'success');
+            UI.editOrder(orderId);
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
     },
 
     async removeOrderItem(itemId, orderId) {
@@ -882,7 +918,11 @@ const UI = {
                 await db.from('supply_catalog').insert({
                     item_name: newName,
                     category: category,
-                    unit: catalogItem?.unit || 'units'
+                    unit: catalogItem?.unit || 'units',
+                    available_at: catalogItem?.available_at || ['Main Winery', 'Jacktown', 'Westmoreland'],
+                    product_url: catalogItem?.product_url || '',
+                    supplier: catalogItem?.supplier || '',
+                    stock_status: catalogItem?.stock_status || 'in_stock'
                 });
             }
             showToast('Name saved', 'success');

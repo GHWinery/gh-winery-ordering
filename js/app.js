@@ -188,6 +188,11 @@ const App = {
         document.getElementById('login-screen').classList.remove('hidden');
         document.getElementById('app-screen').classList.add('hidden');
         document.getElementById('profile-setup-screen').classList.add('hidden');
+        // Reset form state
+        document.getElementById('login-form').reset();
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('signup-form').classList.add('hidden');
+        document.getElementById('login-error').classList.add('hidden');
     },
 
     showProfileSetup() {

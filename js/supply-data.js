@@ -167,7 +167,7 @@ async function loadCatalogUrls() {
     try {
         const { data, error } = await db
             .from('supply_catalog')
-            .select('item_name, category, product_url, supplier, stock_status');
+            .select('item_name, category, unit, available_at, product_url, supplier, stock_status');
         if (error || !data) return;
         for (const row of data) {
             const item = SUPPLY_CATALOG.find(i => i.item_name === row.item_name && i.category === row.category);
@@ -175,6 +175,18 @@ async function loadCatalogUrls() {
                 if (row.product_url) item.product_url = row.product_url;
                 if (row.supplier) item.supplier = row.supplier;
                 if (row.stock_status) item.stock_status = row.stock_status;
+                if (row.available_at) item.available_at = row.available_at;
+            } else {
+                // DB-only item (added via catalog management) — add to in-memory catalog
+                SUPPLY_CATALOG.push({
+                    item_name: row.item_name,
+                    category: row.category,
+                    unit: row.unit || 'units',
+                    available_at: row.available_at || ['Main Winery', 'Jacktown', 'Westmoreland'],
+                    product_url: row.product_url || '',
+                    supplier: row.supplier || '',
+                    stock_status: row.stock_status || 'in_stock'
+                });
             }
         }
     } catch (e) {

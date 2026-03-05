@@ -226,10 +226,13 @@ const UI = {
                 if (match) anyVisible = true;
             });
             section.style.display = anyVisible ? '' : 'none';
-            if (anyVisible && q) {
-                const header = section.querySelector('.category-header');
+            const header = section.querySelector('.category-header');
+            if (q && anyVisible) {
                 header.classList.remove('collapsed');
                 header.nextElementSibling.style.display = '';
+            } else if (!q) {
+                // Restore normal collapsed state when search cleared
+                header.nextElementSibling.style.display = header.classList.contains('collapsed') ? 'none' : '';
             }
         });
     },
@@ -295,7 +298,7 @@ const UI = {
                     <div class="table-container"><table>
                     <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th><th>Received</th><th>Notes</th>${canConfirm ? '<th></th>' : ''}</tr></thead>
                     <tbody>${items.map(item => `<tr>
-                        <td>${(() => { const ci = SUPPLY_CATALOG.find(c => c.item_name === item.item_name && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" title="View product">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</td>
+                        <td>${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" title="View product">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</td>
                         <td><strong>${item.quantity}</strong></td>
                         <td>${escapeHtml(item.unit)}</td>
                         <td><span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span></td>
@@ -366,7 +369,7 @@ const UI = {
                     <div class="table-container"><table>
                     <thead><tr><th>Item</th><th>Qty</th><th>Notes</th><th>Status</th><th></th></tr></thead>
                     <tbody>${items.map(item => `<tr id="edit-row-${item.id}">
-                        <td>${escapeHtml(item.item_name)} <span style="color:#999;font-size:0.85rem">${escapeHtml(item.unit)}</span></td>
+                        <td>${escapeHtml(item.item_name)} <span style="color:${item.item_name.includes('(Unlabeled)') ? 'var(--color-primary)' : '#999'};font-size:0.85rem;font-weight:${item.item_name.includes('(Unlabeled)') ? '600' : '400'}">${escapeHtml(item.unit)}</span></td>
                         <td><input type="number" min="1" value="${item.quantity}" style="width:70px;padding:6px;text-align:center" data-edit-qty="${item.id}"></td>
                         <td><input type="text" value="${escapeHtml(item.notes || '')}" style="width:100%;padding:6px" data-edit-notes="${item.id}"></td>
                         <td><span class="status-badge status-${item.status}">${STATUS_LABELS[item.status] || item.status}</span></td>
@@ -429,6 +432,13 @@ const UI = {
         if (!confirmed) return;
         try {
             await Orders.removeItem(itemId);
+            const order = await Orders.get(orderId);
+            if (order.items.length === 0) {
+                await Orders.delete(orderId);
+                showToast('Last item removed — order deleted', 'success');
+                App.navigate('orders');
+                return;
+            }
             showToast('Item removed', 'success');
             UI.editOrder(orderId);
         } catch (err) { showToast('Error: ' + err.message, 'error'); }
@@ -455,6 +465,8 @@ const UI = {
     },
 
     async archiveOrder(orderId) {
+        const confirmed = await showConfirm('Archive this order? It can be unarchived later.');
+        if (!confirmed) return;
         try {
             await Orders.archive(orderId);
             showToast('Order archived', 'success');
@@ -487,9 +499,11 @@ const UI = {
             : 'All Fulfillment Items';
 
         const statusFilter = document.getElementById('fulfillment-status-filter');
+        const prevStatus = statusFilter.value;
         const statuses = team ? TEAM_STATUSES[team] : ['pending', 'packed', 'ordered', 'out_for_delivery', 'delivered'];
         statusFilter.innerHTML = '<option value="all">All Active</option>' +
             statuses.map(s => `<option value="${s}">${STATUS_LABELS[s] || s}</option>`).join('');
+        if ([...statusFilter.options].some(o => o.value === prevStatus)) statusFilter.value = prevStatus;
 
         container.innerHTML = '<div class="loading">Loading queue</div>';
 
@@ -549,7 +563,7 @@ const UI = {
                         return `<label class="fulfillment-item" style="cursor:pointer" for="chk-${item.id}">
                             <input type="checkbox" id="chk-${item.id}" class="bulk-check" data-item-id="${item.id}" data-order-id="${item.order_id}" data-team="${item.fulfillment_team}" onchange="UI.updateBulkCount()" style="width:18px;height:18px;margin-right:10px;flex-shrink:0">
                             <div class="fulfillment-item-info" style="flex:1">
-                                <span class="item-name">${(() => { const ci = SUPPLY_CATALOG.find(c => c.item_name === item.item_name && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--color-primary)">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
+                                <span class="item-name">${(() => { const baseName = item.item_name.replace(' (Unlabeled)', ''); const ci = SUPPLY_CATALOG.find(c => c.item_name === baseName && c.category === item.category); return ci && ci.product_url ? `<a href="${escapeHtml(ci.product_url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--color-primary)">${escapeHtml(item.item_name)}</a>` : escapeHtml(item.item_name); })()}</span>
                                 <span class="item-detail">
                                     ${item.quantity} ${escapeHtml(item.unit)} &middot; ${escapeHtml(item.category)}
                                     ${item.notes ? ` &middot; "${escapeHtml(item.notes)}"` : ''}
@@ -628,6 +642,9 @@ const UI = {
 
     async renderReceiving() {
         const container = document.getElementById('receiving-list');
+        const recvLocFilter = document.getElementById('receiving-location-filter');
+        if (Auth.isStoreStaff()) recvLocFilter.classList.add('hidden');
+        else recvLocFilter.classList.remove('hidden');
         container.innerHTML = '<div class="loading">Loading items to receive</div>';
 
         try {
@@ -825,7 +842,8 @@ const UI = {
                     }).join('')}
                     <div class="catalog-add-row">
                         <input type="text" class="catalog-add-input" placeholder="New item name..." id="add-item-${escapeHtml(category).replace(/\s/g,'-')}">
-                        <button class="btn btn-sm btn-primary" onclick="UI.addCatalogItem('${escapeHtml(category)}')">+ Add Item</button>
+                        <input type="text" class="catalog-add-input" placeholder="Unit (e.g. cases, boxes)" id="add-unit-${escapeHtml(category).replace(/\s/g,'-')}" style="max-width:140px">
+                        <button class="btn btn-sm btn-primary" onclick="UI.addCatalogItem('${escapeHtml(category)}')">+ Add</button>
                     </div>
                 </div>
             </div>`;
@@ -958,7 +976,8 @@ const UI = {
         if (exists) { showToast('Item already exists in this category', 'warning'); return; }
 
         const isWine = category === 'Wine';
-        const unit = isWine ? 'cases' : 'units';
+        const unitInput = document.getElementById('add-unit-' + category.replace(/\s/g, '-'));
+        const unit = isWine ? 'cases' : (unitInput?.value.trim() || 'units');
         const team = CATEGORY_TEAM_MAP[category];
         const locations = ['Main Winery', 'Jacktown', 'Westmoreland'];
 

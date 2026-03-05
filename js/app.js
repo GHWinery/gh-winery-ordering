@@ -228,6 +228,11 @@ const App = {
     },
 
     navigate(view) {
+        // Reset order form state when leaving
+        if (this.currentView === 'new-order' && view !== 'new-order') {
+            UI.selectedOrderLocation = null;
+        }
+
         // Hide all views
         document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
 

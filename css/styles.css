@@ -755,6 +755,24 @@ tr:hover {
     .catalog-row-fields {
         flex-wrap: wrap;
     }
+    .oir-main {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .oir-name {
+        min-width: auto;
+    }
+    .oir-qty-group {
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .oir-notes {
+        width: 100%;
+    }
+    .catalog-stores {
+        flex-wrap: wrap;
+    }
 }
 
 /* Legacy item-row (kept for edit view) */

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GH Winery — Supply Ordering</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen">
+        <div class="login-container">
+            <div class="login-logo">
+                <h1>GH Winery</h1>
+                <p>Supply Ordering System</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required placeholder="Password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+                <p class="login-toggle">Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+            </form>
+            <form id="signup-form" class="login-form hidden">
+                <div class="form-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" required placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" required minlength="6" placeholder="Min 6 characters">
+                </div>
+                <div class="form-group">
+                    <label for="signup-role">Role</label>
+                    <select id="signup-role" required>
+                        <option value="">Select your role...</option>
+                        <option value="store_staff">Store Staff</option>
+                        <option value="distribution">Distribution Team</option>
+                        <option value="supplies">Supplies Team</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group" id="signup-location-group">
+                    <label for="signup-location">Store Location</label>
+                    <select id="signup-location">
+                        <option value="">Select location...</option>
+                        <option value="Main Winery">Main Winery</option>
+                        <option value="Jacktown">Jacktown</option>
+                        <option value="Westmoreland">Westmoreland</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+                <p class="login-toggle">Already have an account? <a href="#" id="show-login">Sign In</a></p>
+            </form>
+            <div id="login-error" class="error-msg hidden"></div>
+        </div>
+    </div>
+
+    <!-- Profile Setup (for users who logged in but have no profile) -->
+    <div id="profile-setup-screen" class="screen hidden">
+        <div class="login-container">
+            <div class="login-logo">
+                <h1>GH Winery</h1>
+                <p>Complete Your Profile</p>
+            </div>
+            <form id="profile-setup-form" class="login-form">
+                <div class="form-group">
+                    <label for="setup-name">Full Name</label>
+                    <input type="text" id="setup-name" required placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label for="setup-role">Role</label>
+                    <select id="setup-role" required>
+                        <option value="">Select your role...</option>
+                        <option value="store_staff">Store Staff</option>
+                        <option value="distribution">Distribution Team</option>
+                        <option value="supplies">Supplies Team</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group" id="setup-location-group">
+                    <label for="setup-location">Store Location</label>
+                    <select id="setup-location">
+                        <option value="">Select location...</option>
+                        <option value="Main Winery">Main Winery</option>
+                        <option value="Jacktown">Jacktown</option>
+                        <option value="Westmoreland">Westmoreland</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Save Profile</button>
+                <div id="setup-error" class="error-msg hidden"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-screen" class="screen hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1 class="app-title">GH Winery</h1>
+                <span id="user-role-badge" class="role-badge"></span>
+            </div>
+            <div class="header-right">
+                <span id="user-name"></span>
+                <button id="logout-btn" class="btn btn-sm btn-outline">Sign Out</button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+            <button class="nav-btn" data-view="new-order" id="nav-new-order">New Order</button>
+            <button class="nav-btn" data-view="orders" id="nav-orders">Orders</button>
+            <button class="nav-btn" data-view="fulfillment" id="nav-fulfillment">Fulfillment Queue</button>
+            <button class="nav-btn" data-view="receiving" id="nav-receiving">Receiving</button>
+            <button class="nav-btn" data-view="catalog" id="nav-catalog">Item Catalog</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="app-content">
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="view">
+                <h2>Dashboard</h2>
+                <div id="dashboard-cards" class="dashboard-cards"></div>
+                <div class="dashboard-section">
+                    <h3>Recent Activity</h3>
+                    <div id="recent-activity"></div>
+                </div>
+            </div>
+
+            <!-- New Order View -->
+            <div id="view-new-order" class="view hidden">
+                <div class="view-header">
+                    <h2>New Order</h2>
+                    <div id="order-location-info" class="location-info"></div>
+                </div>
+                <div id="order-form-container"></div>
+            </div>
+
+            <!-- Orders List View -->
+            <div id="view-orders" class="view hidden">
+                <div class="view-header">
+                    <h2>Orders</h2>
+                    <div class="filter-bar">
+                        <select id="order-status-filter">
+                            <option value="all">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="submitted">Submitted</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                        <select id="order-location-filter" class="hidden">
+                            <option value="all">All Locations</option>
+                            <option value="Main Winery">Main Winery</option>
+                            <option value="Jacktown">Jacktown</option>
+                            <option value="Westmoreland">Westmoreland</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="orders-list"></div>
+            </div>
+
+            <!-- Order Detail View -->
+            <div id="view-order-detail" class="view hidden">
+                <button class="btn btn-sm btn-outline back-btn" id="back-to-orders">&larr; Back to Orders</button>
+                <div id="order-detail-content"></div>
+            </div>
+
+            <!-- Fulfillment Queue View -->
+            <div id="view-fulfillment" class="view hidden">
+                <div class="view-header">
+                    <h2 id="fulfillment-title">Fulfillment Queue</h2>
+                    <div class="filter-bar">
+                        <select id="fulfillment-status-filter">
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                        <select id="fulfillment-location-filter">
+                            <option value="all">All Locations</option>
+                            <option value="Main Winery">Main Winery</option>
+                            <option value="Jacktown">Jacktown</option>
+                            <option value="Westmoreland">Westmoreland</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="fulfillment-queue"></div>
+            </div>
+
+            <!-- Item Catalog View -->
+            <div id="view-receiving" class="view hidden">
+                <div class="view-header">
+                    <h2>Receiving Orders</h2>
+                    <div class="filter-bar">
+                        <select id="receiving-location-filter">
+                            <option value="all">All Locations</option>
+                            <option value="Main Winery">Main Winery</option>
+                            <option value="Jacktown">Jacktown</option>
+                            <option value="Westmoreland">Westmoreland</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="receiving-list"></div>
+            </div>
+
+            <div id="view-catalog" class="view hidden">
+                <div class="view-header">
+                    <h2>Item Catalog</h2>
+                    <div class="filter-bar">
+                        <select id="catalog-category-filter">
+                            <option value="all">All Categories</option>
+                            <option value="Wine">Wine</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Tasting Room">Tasting Room</option>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Office">Office</option>
+                            <option value="Bar Supplies">Bar Supplies</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="catalog-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Confirmation modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <p id="confirm-message"></p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="confirm-cancel">Cancel</button>
+                <button class="btn btn-primary" id="confirm-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/supply-data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
